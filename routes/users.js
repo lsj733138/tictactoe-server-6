@@ -102,4 +102,64 @@ router.post('/signout', function(req, res, next) {
     res.status(400).json({ message: 'No active session. '});
   }
 });
+
+// 점수 추가
+router.post('/addscore', async function(req, res, next) {
+  try {
+    if (!req.session.isAuthenticated) {
+      return res.status(401).json({ message: 'Unauthorized.' });
+    }
+
+    var userId = req.session.userId;
+    var score = req.body.score;
+
+    // 점수 유효성 검사
+    if (!score || isNaN(score)) {
+      return res.status(400).send({ message: 'Invalid score.' });
+    }
+
+    // DB 연결
+    var database = req.app.get('database');
+    var users = database.collection('users');
+
+    // DB 점수 업데이트
+    const result = await users.updateOne({ _id: new ObjectId(userId) }, { $set: { score: Number(score), updatedAt: new Date() } });
+
+    res.status(200).json({ message: 'Score added successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+});
+
+// 점수 불러오기
+router.get('/score', async function(req, res, next) {
+  try {
+    // 로그인 확인
+    if (!req.session.isAuthenticated) {
+      return res.status(401).json({ message: 'Unauthorized.' });
+    }
+
+    // 세션에서 사용자 ID 가져오기
+    var userId = req.session.userId;
+
+    // DB 연결
+    var database = req.app.get('database');
+    var users = database.collection('users');
+
+    // DB에서 해당 사용자의 정보 가져오기
+    const user = await users.findOne({ _id: new ObjectId(userId) });
+
+    // 사용자 정보가 없으면 404 오류 반환
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // 점수 반환
+    res.status(200).json({ score: user.score });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+});
+
 module.exports = router;

@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('tictactoe6-server:server');
 var http = require('http');
+var game = require('../game');
 
 /**
  * Get port from environment and store in Express.
