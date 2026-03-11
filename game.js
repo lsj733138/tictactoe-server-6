@@ -14,18 +14,18 @@ module.exports = function(server)
     
     // 클라이언트로부터 호출을 받았을 때 동작
     io.on('connection', function(socket) { // socket -> client
-        console.log('a user connected');
+        console.log('a user connected : ' + socket.id);
         
         if (rooms.length > 0) {
             var roomId = rooms.shift(); // 배열에서 값을 빼서 가져옴
             socket.join(roomId);
             socket.emit('joinRoom', { roomId: roomId });
-            socket.to(roomId).emit('startGame', { socketId: roomId });
+            socket.to(roomId).emit('startGame', { roomId: roomId });
             socketRooms.set(socket.id, roomId);
         } else {
             var roomId = uuidv4(); // 중복되지 않는 방 이름 반환
             socket.join(roomId);
-            socket.emit('createRoom', { roomId: roomID }); // createRoom이라는 메시지 전달, 만든 방 아이디 전달
+            socket.emit('createRoom', { roomId: roomId }); // createRoom이라는 메시지 전달, 만든 방 아이디 전달
             rooms.push(roomId);
             socketRooms.set(socket.id, roomId);
         }
@@ -48,7 +48,7 @@ module.exports = function(server)
         });
         
         // 끊겼을 때 로그 남기기
-        socket.on('disconnecting', function() {
+        socket.on('disconnecting', function(reason) {
             console.log('Disconnected : ' + socket.id + ', Reason : ' + reason); 
         });
         
@@ -60,4 +60,8 @@ module.exports = function(server)
             socket.to(roomId).emit('doOpponent', { position: cellIndex });
         });
     });
+    
+    io.on('disconnecting', function(reason){
+        console.log('Room removed: ', roomId);
+    })
 }
